@@ -6,7 +6,7 @@
     hostname: xxx.xxx.xxx.xxx
     username: username
     password: password
-    vserver: 
+    vserver: cds_test
     volname1: mysql_data
     volname2: wordpress_data
     aggr: aggr1_node1
