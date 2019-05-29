@@ -1,88 +1,103 @@
---- 
-- hosts: localhost 
+---
+- hosts: localhost
   gather_facts: false
-  name: Setup ONTAP 
-  vars: 
-    hostname: "{{ hostname }}"
-    username: "{{ username }}"
-    volname: "{{ volname }}"
-    vserver: "{{ vserver }}"
-    aggr: "{{ aggr }}"
-    address: "{{ address }}"
-    policy: ansiblePolicy 
-    state: present 
-  tasks: 
-  - name: Create Policy 
-    na_ontap_export_policy: 
-      state: "{{ state }}" 
-      name: "{{ policy }}" 
-      vserver: "{{ vserver }}" 
-      hostname: "{{ hostname }}" 
-      username: "{{ username }}" 
-      password: "{{ password }}" 
-  - name: Setup rules 
-    na_ontap_export_policy_rule: 
-      state: "{{ state }}" 
-      policy_name: "{{ policy }}" 
-      vserver: "{{ vserver }}" 
-      client_match: 0.0.0.0/0  
-      ro_rule: any 
-      rw_rule: any 
-      super_user_security: any 
-      hostname: "{{ hostname }}" 
-      username: "{{ username }}" 
-      password: "{{ password }}" 
-  - name: Create volume 
-    na_ontap_volume: 
-      state: "{{ state }}" 
-      name: "{{ volname }}" 
-      aggregate_name: "{{ aggr }}" 
-      size: 15 
-      size_unit: gb 
-      policy: "{{ policy }}" 
-      junction_path: "/{{ volname }}" 
-      space_guarantee: "none" 
-      vserver: "{{ vserver }}" 
-      hostname: "{{ hostname }}" 
-      username: "{{ username }}" 
-      password: "{{ password }}" 
-#  - name: Create QTree
-#    na_ontap_qtree:
-#      state: present
-#      name: ansibleqtree
-#      flexvol_name: "{{ volname }}"
-#      vserver: "{{ vserver }}"
-#      hostname: "{{ hostname }}"
-#      username: "{{ username }}"
-#      password: "{{ password }}"
-#
-#  - name: Rename QTree
-#    na_ontap_qtree:
-#      state: present
-#      name: ansibleQTree
-#      flexvol_name: "{{ volname }}"
-#      vserver: "{{ vserver }}"
-#      hostname: "{{ netapp_hostname }}"
-#      username: "{{ netapp_username }}"
-#      password: "{{ netapp_password }}"
+  name: Setup ONTAP
+  vars:
+    hostname: xxx.xxx.xxx.xxx
+    username: username
+    password: password
+    vserver: Ansible_Handson
+    volname1: mysql_data
+    volname2: wordpress_data
+    aggr: aggr1_node1
+    address: xxx.xxx.xxx.xxx(lif ip)
+    policy: ansiblePolicy
+    state: present
+  tasks:
+  - name: Create Policy
+    na_ontap_export_policy:
+      state: "{{ state }}"
+      name: "{{ policy }}"
+      vserver: "{{ vserver }}"
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+  - name: Setup rules
+    na_ontap_export_policy_rule:
+      state: "{{ state }}"
+      policy_name: "{{ policy }}"
+      vserver: "{{ vserver }}"
+      client_match: 0.0.0.0/0
+      ro_rule: any
+      rw_rule: any
+      super_user_security: any
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+  - name: Create volume_1
+    na_ontap_volume:
+      state: "{{ state }}"
+      name: "{{ volname1 }}"
+      aggregate_name: "{{ aggr }}"
+      size: 15
+      size_unit: gb
+      policy: "{{ policy }}"
+      junction_path: "/{{ volname1 }}"
+      space_guarantee: "none"
+      vserver: "{{ vserver }}"
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+  - name: Create volume_2
+    na_ontap_volume:
+      state: "{{ state }}"
+      name: "{{ volname2 }}"
+      aggregate_name: "{{ aggr }}"
+      size: 15
+      size_unit: gb
+      policy: "{{ policy }}"
+      junction_path: "/{{ volname2 }}"
+      space_guarantee: "none"
+      vserver: "{{ vserver }}"
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
 
-- hosts: wordpress-server
-  tasks: 
+
+- hosts: ansible-server
+  vars:
+    address: xxx.xxx.xxx.xxx(host ip)
+    volname: test007
+  tasks:
   - name: Install NFS-UTILS package for Client Server
     yum: name=nfs-utils state=present
-    
-  - name: Update fstab file 
-    lineinfile: 
+
+  - name: Update fstab file for mysql
+    lineinfile:
       path: /etc/fstab
-      line: "{{ address }}:/{{ volname }} /srv nfs defaults 0 0" 
-  - name: Verify mount directory exists 
-    file: 
-      path: /srv
+      line: "{{ address }}:/{{ volname1 }} /var/lib/mysql nfs defaults 0 0"
+  - name: Update fstab file for wordpress
+    lineinfile:
+      path: /etc/fstab
+      line: "{{ address }}:/{{ volname2 }} /var/www/html nfs defaults 0 0"
+  - name: Verify mount directory exists for mysql data
+    file:
+      path: /var/lib/mysql
       state: directory
-  - name: Mount nfs export 
-    mount: 
+  - name: Verify mount directory exists for wordpress core file
+    file:
+      path: /var/www/html
+      state: directory
+  - name: Mount nfs export for vol1
+    mount:
       state: mounted
-      path: /srv
-      src: "{{ address }}:/{{ volname }}" 
+      path: /var/lib/mysql
+      src: "{{ address }}:/{{ volname1 }}"
+      fstype: nfs
+  - name: Mount nfs export for vol2
+    mount:
+      state: mounted
+      path: /var/www/html
+      src: "{{ address }}:/{{ volname2 }}"
       fstype: nfs
 ...
