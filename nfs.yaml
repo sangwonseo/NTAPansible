@@ -6,7 +6,7 @@
     hostname: xxx.xxx.xxx.xxx
     username: username
     password: password
-    vserver: Ansible_Handson
+    vserver: 
     volname1: mysql_data
     volname2: wordpress_data
     aggr: aggr1_node1
